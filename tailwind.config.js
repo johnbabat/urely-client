@@ -4,7 +4,16 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      width: {
+        '88': '22rem',
+      },
+      margin: {
+        '104': '30rem',
+        '112': '36rem'
+      }
+    },
+    fontFamily: {}
   },
   plugins: [],
 }
