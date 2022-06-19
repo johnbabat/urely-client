@@ -7,9 +7,9 @@ import Landing from '../components/Landing'
 
 const Home: NextPage = () => {
   return (
-    <div className="bg-[url('/bground.jpg')] bg-cover bg-repeat-y h-screen">
+    <div className="bg-[url('/bground.jpg')] bg-cover bg-repeat h-screen">
       <Head>
-        <title>urlie</title>
+        <title>urrl</title>
       </Head>
 
       <Header/>

@@ -6,14 +6,16 @@ interface Params {
 
 export async function getServerSideProps({ params }: { params: Params }) {
   const apiURI = process.env.API_URL
-  console.log(params.alias)
+
   const response = await fetch(
     `${apiURI}/url/visit?alias=${params.alias}`, {
       headers: {
         'Content-Type': 'application/json'
       }
     }
-  ).catch(() => {})
+  )
+  .catch(() => {})
+
   if (response && response.status == 200) {
     const responseData = await response.json()
     return {
