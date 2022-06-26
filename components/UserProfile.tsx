@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { MdOutlineCancel } from 'react-icons/md';
 
-import { FiShoppingBag, FiEdit, FiPieChart, FiBarChart, FiCreditCard, FiStar, FiShoppingCart } from 'react-icons/fi';
-import { BsKanban, BsBarChart, BsBoxSeam, BsCurrencyDollar, BsShield, BsChatLeft, BsLink } from 'react-icons/bs';
+import { BsLink } from 'react-icons/bs';
 import { CgProfile } from 'react-icons/cg'
 import { HiOutlineDocumentText } from 'react-icons/hi'
 
@@ -81,13 +80,8 @@ const UserProfile = () => {
         ))}
       </div>
       <div className="mt-3">
-        <button
-            type='button'
-            style={{backgroundColor:"rgb(37 99 235)", color:"white", borderRadius:"10px"}}
-            className={` p-3 w-full hover:drop-shadow-xl hover:bg-$light-gray`}
-            color="rgb(153, 171, 180)"
-        >
-            {"logout"}
+        <button className="p-3 w-full hover:drop-shadow-xl bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+            Logout
         </button>
       </div>
     </div>

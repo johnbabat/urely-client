@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AccumulationChartComponent, AccumulationSeriesCollectionDirective, AccumulationSeriesDirective, AccumulationLegend, PieSeries, AccumulationDataLabel, Inject, AccumulationTooltip } from '@syncfusion/ej2-react-charts';
 
 
-const Doughnut = () => {
+interface data {
+  x: string;
+  y: number;
+  text: string;
+}
 
-  const [ chartData, setChartData ] = useState([
-    { x: '2018', y: 18, text: '35%' },
-    { x: '2019', y: 18, text: '15%' },
-    { x: '2020', y: 18, text: '25%' },
-    { x: '2021', y: 18, text: '25%' },
-  ]);
+const Pie = ({ id, data }: { id: string, data: data[] }) => {
 
   return (
     <AccumulationChartComponent
-      id="pie-chart"
-      legendSettings={{ visible: false, background: 'white' }}
-      height="160px"
-      background='#fff'
+      id={id}
+      legendSettings={{ visible: true, background: 'white' }}
+      height="300px"
+      width="300px"
+      background="#fff"
       tooltip={{ enable: true }}
     >
       <Inject services={[AccumulationLegend, PieSeries, AccumulationDataLabel, AccumulationTooltip]} />
       <AccumulationSeriesCollectionDirective>
         <AccumulationSeriesDirective
           name="Sale"
-          dataSource={chartData}
+          dataSource={data}
           xName="x"
           yName="y"
           innerRadius="40%"
@@ -48,4 +48,4 @@ const Doughnut = () => {
   );
 };
 
-export default Doughnut;
+export default Pie;

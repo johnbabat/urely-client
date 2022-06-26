@@ -19,6 +19,9 @@ module.exports = {
       },
       boxShadow: {
         'custom': '3px 3px',
+      },
+      colors: {
+        'chart-green': '#01bdae'
       }
     }
   },
