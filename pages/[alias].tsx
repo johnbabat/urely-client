@@ -1,10 +1,6 @@
 import React, { useEffect } from 'react'
 
-interface Params {
-  alias: string
-}
-
-export async function getServerSideProps({ params }: { params: Params }) {
+export async function getServerSideProps({ params }: { params: { alias: string } }) {
   const apiURI = process.env.API_URL
 
   const response = await fetch(

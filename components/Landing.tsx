@@ -5,20 +5,64 @@ import LineChart from './charts/LineChart';
 
 import { GoPrimitiveDot } from 'react-icons/go';
 
-interface user {
-  name: string
-}
-
 const Landing = () => {
 
-  const me = {
-    name: 'John'
+  const apiURI = process.env.NEXT_PUBLIC_API_URL
+
+  const [urlInfo, setUrlInfo] = useState({
+    longUrl: '',
+    shortUrl: '',
+    alias: '',
+    custom: 0,
+    reserve: 0
+  })
+
+  const [requestError, setRequestError] = useState('')
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (["reserve", "custom"].includes(e.target.name)) {
+      let intVal = Number(val)
+      intVal ^= 1
+      setUrlInfo({
+        ...urlInfo,
+        [e.target.name]: intVal
+      })
+    } else {
+      setUrlInfo({
+        ...urlInfo,
+        [e.target.name]: val
+      })
+    }
   }
 
-  const [user, setUser] = useState<user | null>(me);
-  const [isClicked, setIsClicked] = useState({
-    userProfile: true
-  });
+  const submitUrl = async () => {
+    setRequestError("")
+    if (urlInfo.custom || urlInfo.reserve) {
+      setRequestError("Register to create Private URL");
+      return
+    }
+    const response = await fetch(`${apiURI}/url/create`, {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+              long_url: urlInfo.longUrl
+            })
+    })
+    .catch((error) => { 
+      console.log(error)
+      setRequestError("An error occured");
+     })
+
+    if (response && response.status == 201) {
+        const responseData = await response.json()
+        setUrlInfo(prevState => ({ ...prevState, shortUrl: responseData.short_url }))
+    }
+  }
+
   const [ecomPieChartData, setEComPieChartData] = useState([
     { x: 'urrl.link/a7uWohd', y: 4, text: '1%' },
     { x: 'urrl.link/Ikso2b4', y: 76, text: '19%' },
@@ -38,29 +82,43 @@ const Landing = () => {
         <div className="code-preview rounded-xl bg-gradient-to-r bg-white border border-gray-200 dark:border-gray-700 p-2 sm:p-6 dark:bg-gray-800">
           <div className="mb-6">
             <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Enter your url</label>
-            <input type="text" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+            <input type="text" onChange={(e) => handleChange(e)} name="longUrl" value={urlInfo.longUrl} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
           </div>
           <div className="flex mb-6">
             <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
               urrl.link/
             </span>
-            <input type="text" className="rounded-none rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="your custom alias here"/>
+            <input type="text" onChange={(e) => handleChange(e)} name="alias" value={urlInfo.alias} className="rounded-none rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="your custom alias here"/>
           </div>
           <label className="relative inline-flex items-center mb-4 cursor-pointer">
-            <input type="checkbox" value="" className="sr-only peer"/>
+            <input type="checkbox" onChange={(e) => handleChange(e)} name="custom" value={urlInfo.custom} className="sr-only peer"/>
             <div className="w-8 h-4 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
             <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Use custom alias</span>
           </label>
-          <label className={`relative inline-flex items-center mb-4 ${user ? "cursor-pointer" : ""}`}>
-            <input type="checkbox" value="" className="sr-only peer" disabled={user ? false : true}/>
+          <label className="relative inline-flex items-center mb-4 cursor-pointer">
+            <input type="checkbox" onChange={(e) => handleChange(e)} name="reserve" value={urlInfo.reserve} className="sr-only peer"/>
             <div className="w-8 h-4 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span className={`ml-3 text-sm font-medium ${user ? "text-gray-900 dark:text-gray-300": "text-gray-400 dark:text-gray-500"}`}>Reserve generated alias</span>
+            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Reserve generated alias</span>
           </label>
-          <button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 block">Make URL</button>
+          {
+            urlInfo.shortUrl && (
+              <p className='p-2 bg-gray-600 rounded-md text-gray-400 mb-4 overflow-scroll'>
+                {urlInfo.shortUrl}
+              </p>
+            )
+          }
+          {
+            requestError && (
+              <p className='p-2 bg-red-200 rounded-md mb-4 overflow-scroll text-red-400'>
+                {requestError}
+              </p>
+            )
+          }
+          <button type="submit" onClick={submitUrl} className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 block">Make URL</button>
         </div>
       </div>
       <div className='col-span-12 text-center mt-40 md:mt-60 text-gray-500 text-2xl'>
-        <p className='font-mono font-semibold'>Incredible Insights and Analytics</p>
+        <p className='font-mono font-semibold'>Get Insights and Analytics</p>
       </div>
       <div className="flex flex-col xl:flex-row pt-24 justify-center col-span-12 md:col-span-4 items-center">
           <div className='pl-4 m-0'>
