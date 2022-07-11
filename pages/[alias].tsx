@@ -29,7 +29,7 @@ export async function getServerSideProps({ params }: { params: { alias: string }
 const url = ({ url } : { url: string }) => {
   useEffect(() => {
     if (url) window.location.replace(url)
-  })
+  }, [])
   return (<></>)
 }
 

@@ -16,6 +16,7 @@
     "@syncfusion/ej2-react-popups": "^19.4.52",
     "@syncfusion/ej2-react-richtexteditor": "^19.4.50",
     "@syncfusion/ej2-react-schedule": "^19.4.50",
+    "cookies-next": "^2.1.1",
     "draft-js": "^0.11.7",
     "draftjs-to-html": "^0.9.1",
     "next": "^12.1.6",
