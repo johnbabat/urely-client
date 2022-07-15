@@ -1,50 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChartComponent, SeriesCollectionDirective, SeriesDirective, Inject, Legend, Category, StackingColumnSeries, Tooltip } from '@syncfusion/ej2-react-charts';
 
-const StackedChart = ({ width, height } : { width: string, height: string }) => {
 
-    const [stackedChartData, setStackedChartData] = useState([
-        [
-          { x: 'Jan', y: 111.1 },
-          { x: 'Feb', y: 127.3 },
-          { x: 'Mar', y: 143.4 },
-          { x: 'Apr', y: 159.9 },
-          { x: 'May', y: 159.9 },
-          { x: 'Jun', y: 159.9 },
-          { x: 'July', y: 159.9 },
-        ],
-        [
-          { x: 'Jan', y: 111.1 },
-          { x: 'Feb', y: 127.3 },
-          { x: 'Mar', y: 143.4 },
-          { x: 'Apr', y: 159.9 },
-          { x: 'May', y: 159.9 },
-          { x: 'Jun', y: 159.9 },
-          { x: 'July', y: 159.9 },
-        ],
-      ]);
+const StackedChart = ({ width, height, stackedChartData } : { width: string, height: string, stackedChartData: {x: string, y: number}[][] }) => {
 
-    const [stackedCustomSeries, setStackedCustomSeries] = useState([
+    type ValueType = "Category" | "Double" | "DateTime" | "Logarithmic" | "DateTimeCategory";
+    type LabelIntersectAction = "None" | "Rotate45" | "Hide" | "Trim" | "Wrap" | "MultipleRows" | "Rotate90";
+    let valueType: ValueType = "Category";
+    let labelIntersectAction: LabelIntersectAction = "Rotate45";
 
-        { dataSource: stackedChartData[0],
-          xName: 'x',
-          yName: 'y',
-          name: 'Documents',
-          type: 'StackingColumn',
-          background: 'blue',
-      
-        },
-      
-        { dataSource: stackedChartData[1],
-          xName: 'x',
-          yName: 'y',
-          name: 'Urls',
-          type: 'StackingColumn',
-          background: 'red',
-      
-        },
-      
-      ]);
+    useEffect(() => {
+      setSeriesDoc({ ...customSeriesDoc, dataSource: stackedChartData[0]})
+      setSeriesUrl({ ...customSeriesUrl, dataSource: stackedChartData[1]})
+    }, [stackedChartData])
+    
+
+    const [customSeriesDoc, setSeriesDoc] = useState({ 
+      dataSource: stackedChartData[0],
+      xName: 'x',
+      yName: 'y',
+      name: 'Documents',
+      type: 'StackingColumn',
+      background: 'blue'
+    })
+
+    const [customSeriesUrl, setSeriesUrl] = useState({ 
+      dataSource: stackedChartData[1],
+      xName: 'x',
+      yName: 'y',
+      name: 'Urls',
+      type: 'StackingColumn',
+      background: 'red'
+    })
 
     const [stackedPrimaryXAxis, setStackedPrimaryXAxis] = useState({
         majorGridLines: { width: 0 },
@@ -53,15 +40,12 @@ const StackedChart = ({ width, height } : { width: string, height: string }) => 
         minorTickLines: { width: 0 },
         interval: 1,
         lineStyle: { width: 0 },
-        labelIntersectAction: 'Rotate45',
-        valueType: 'Category',
+        labelIntersectAction: labelIntersectAction,
+        valueType: valueType,
       });
       
     const [stackedPrimaryYAxis, setStackedPrimaryYAxis] = useState({
         lineStyle: { width: 0 },
-        minimum: 100,
-        maximum: 400,
-        interval: 100,
         majorTickLines: { width: 0 },
         majorGridLines: { width: 1 },
         minorGridLines: { width: 1 },
@@ -84,7 +68,8 @@ const StackedChart = ({ width, height } : { width: string, height: string }) => 
       <Inject services={[StackingColumnSeries, Category, Legend, Tooltip]} />
       <SeriesCollectionDirective>
         {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-        {stackedCustomSeries.map((item, index) => <SeriesDirective key={index} {...item} />)}
+        <SeriesDirective key={0} {...customSeriesDoc} />
+        <SeriesDirective key={1} {...customSeriesUrl} />
       </SeriesCollectionDirective>
     </ChartComponent>
   );

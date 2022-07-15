@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { convertToRaw, EditorState, convertFromHTML, ContentState } from 'draft-js';
+import Router, { useRouter } from 'next/router'
 import dynamic from 'next/dynamic';
 import draftToHtml from 'draftjs-to-html';
 import { EditorProps } from 'react-draft-wysiwyg';
 
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
-import Header from '../../components/Header';
+import Header from '../../../components/Header';
 import { RiDeleteBin6Line } from 'react-icons/ri';
+import { validateAccess } from '../../../utils/validateAccess';
 
 const Editor = dynamic<EditorProps>(
     () => import('react-draft-wysiwyg').then((mod) => mod.Editor),
@@ -17,54 +19,47 @@ const Editor = dynamic<EditorProps>(
 const Create = () => {
 
     const apiURI = process.env.NEXT_PUBLIC_API_URL
+    const router = useRouter()
 
-    const [documentInfo, setDocumentInfo] = useState({
-        title: '',
-    });
-
+    const [documentTitle, setDocumentTitle] = useState('');
     const [saveStatus, setSaveStatus] = useState('');
-
     const [requestError, setRequestError] = useState('');
-
     const [docPrivate, setPrivate] = useState(false);
+    const [description, setDescription] = useState(EditorState.createEmpty());
 
     const onChangeValue = (e: React.ChangeEvent<HTMLInputElement> ) => {
         setSaveStatus('')
         setRequestError('')
-        setDocumentInfo({
-            ...documentInfo,
-            [e.target.name]: e.target.value
-            });
+        setDocumentTitle(e.target.value);
     }
-
-    const [description, setDescription] = useState(EditorState.createEmpty());
+    
     const onEditorStateChange = (editorState: EditorState) => {
         setSaveStatus('')
         setRequestError('')
         setDescription(editorState);
-        console.log('editor - ', editorState)
-        // console.log('prev - ', editorState.getCurrentContent())
-        console.log('up - ', draftToHtml(convertToRaw(editorState.getCurrentContent())));
-        console.log('down - ', convertFromHTML(draftToHtml(convertToRaw(editorState.getCurrentContent()))))
-        let pasd = EditorState.createWithContent(ContentState.createFromBlockArray(convertFromHTML(draftToHtml(convertToRaw(editorState.getCurrentContent())))))
-        console.log('exp - ', pasd)
-        console.log('final - ', draftToHtml(convertToRaw(pasd.getCurrentContent())))
     }
     
     const addDetails = async (event: React.FormEvent<HTMLFormElement>) => {
-        setSaveStatus('Saving...')
-        setRequestError('')
         event.preventDefault();
         event.persist();
+
+        const access = await validateAccess();
+        if (!access.success) {
+            setRequestError('Please Login!');
+            return
+        }
+        setSaveStatus('Saving...')
+        setRequestError('')
         
-        const response = await fetch(`${apiURI}/document/create`, {
+        let response = await fetch(`${apiURI}/document/create`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                title: documentInfo.title,
+                title: documentTitle,
                 html_text: draftToHtml(convertToRaw(description.getCurrentContent())),
                 plain_text: description.getCurrentContent().getPlainText()
                 })
@@ -78,13 +73,19 @@ const Create = () => {
         if (response && response.status == 201) {
             setSaveStatus('Saved!');
             const responseData = await response.json();
-            window.location.href = `id/${responseData.id}`;
+            router.push(`/app/d/${responseData.id}`);
+            // window.location.href = `${responseData.id}`;
             return
         }
-        if (response && response.status == 400) {
-            const responseData = await response.json();
+        if (response && [400, 401].includes(response.status)) {
+            const errorResponse = await response.json();
+            if (response.status == 401) {
+                setRequestError("Please Login");
+                router.push("/app/login");
+                // window.location.href = "/app/login";
+            } 
+            if (response.status == 400) setRequestError(errorResponse.error);
             setSaveStatus('Save failed!');
-            setRequestError(responseData.error);
             return
         }
         setSaveStatus('Save failed!');
@@ -107,7 +108,7 @@ const Create = () => {
                     <div className='mt-2'>
                         <div>
                             <label> Title <span className="text-red-500"> * </span> </label>
-                            <input className="block bg-gray-100 rounded-md w-full my-2 p-2" type="text" name="title" value={documentInfo.title} onChange={onChangeValue} placeholder="Title" required />
+                            <input className="block bg-gray-100 rounded-md w-full my-2 p-2" type="text" name="title" value={documentTitle} onChange={onChangeValue} placeholder="Title" required />
                         </div>
                         <div>
                             <div className='mb-2'><label> Body <span className="text-red-500"> * </span> </label></div>

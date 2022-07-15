@@ -2,27 +2,21 @@ import React from 'react';
 import { AccumulationChartComponent, AccumulationSeriesCollectionDirective, AccumulationSeriesDirective, AccumulationLegend, PieSeries, AccumulationDataLabel, Inject, AccumulationTooltip } from '@syncfusion/ej2-react-charts';
 
 
-interface data {
-  x: string;
-  y: number;
-  text: string;
-}
-
-const Pie = ({ id, data }: { id: string, data: data[] }) => {
+const Pie = ({ id, data, size }: { id: string, data: {x: string, y: number, text: string}[], size: string }) => {
 
   return (
     <AccumulationChartComponent
       id={id}
       legendSettings={{ visible: true, background: 'white' }}
-      height="300px"
-      width="300px"
+      height={size}
+      width={size}
       background="#fff"
       tooltip={{ enable: true }}
     >
       <Inject services={[AccumulationLegend, PieSeries, AccumulationDataLabel, AccumulationTooltip]} />
       <AccumulationSeriesCollectionDirective>
         <AccumulationSeriesDirective
-          name="Sale"
+          name="Visits"
           dataSource={data}
           xName="x"
           yName="y"

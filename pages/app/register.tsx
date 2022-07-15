@@ -1,12 +1,14 @@
-import Link from 'next/link'
-import React, { useState } from 'react'
-import Header from '../../components/Header'
-
+import Link from 'next/link';
+import React, { useState } from 'react';
 import { FcLink } from "react-icons/fc";
+import { useRouter } from 'next/router';
+
+import Header from '../../components/Header'
 
 const Register = () => {
 
   const apiURI = process.env.NEXT_PUBLIC_API_URL
+  const router = useRouter()
 
   const [registerInfo, setRegisterInfo] = useState({
     firstName: '',
@@ -22,7 +24,7 @@ const Register = () => {
     setRequestError('');
     setRegisterInfo({
       ...registerInfo,
-      [e.target.name]: [e.target.value]
+      [e.target.name]: e.target.value
     })
   }
 
@@ -35,12 +37,16 @@ const Register = () => {
     let lastName = registerInfo.lastName;
     let password = registerInfo.password;
     let confirmPassword = registerInfo.confirmPassword
-    if (password !== confirmPassword) setRequestError('Passwords must match');
-    if (!(email && firstName && lastName && password)) setRequestError('All fields are required');
+    console.log(password, confirmPassword)
+    if (password !== confirmPassword) {
+      setRequestError('Passwords must match');
+      return
+    }
+    if (!(email && firstName && lastName && password)) {
+      setRequestError('All fields are required');
+    }
 
-
-    const response = await fetch(`${apiURI}/register`, {
-
+    const response = await fetch(`${apiURI}/auth/register`, {
       method: 'POST',
       headers: {
           'Accept': 'application/json',
@@ -59,7 +65,7 @@ const Register = () => {
       })
 
       if (response && response.status == 201) {
-        window.location.href = `/app/login`;
+        router.push('/app/login');
         return
     }
     if (response && [400, 409].includes(response.status)) {

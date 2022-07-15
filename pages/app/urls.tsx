@@ -1,64 +1,61 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import StackedChart from '../../components/charts/StackedChart';
 import { GoPrimitiveDot, GoLink } from 'react-icons/go';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import Link from 'next/link';
-
-// TODO: Paginate the urls.
+import Header from '../../components/Header';
+import { validateAccess } from '../../utils/validateAccess';
+import Pie from '../../components/charts/Pie';
 
 const urls = () => {
 
-    const [myurls, setMyurls] = useState([
-        {
-            id: "1",
-            short_url: 'urrl.link/j8snfbf',
-            alias: 'j8snfbf',
-            long_url: 'https://google.com/jhvgghbjhbghvf',
-            private: true
-        },
-        {
-            id: "2",
-            short_url: 'urrl.link/9fnfbf5',
-            alias: '9fnfbf5',
-            long_url: 'https://google.com',
-            private: true
-        },
-        {
-            id: "3",
-            short_url: 'urrl.link/oA78cHY',
-            alias: 'oA78cHY',
-            long_url: 'https://google.com',
-            private: false
-        },
-        {
-            id: "4",
-            short_url: 'urrl.link/j8sLsLL',
-            alias: 'j8sLsLL',
-            long_url: 'https://google.com',
-            private: true
-        },
-        {
-            id: "6",
-            short_url: 'urrl.link/pYsnfbfH',
-            alias: 'pYsnfbfH',
-            long_url: 'https://google.com',
-            private: false
-        },
-        {
-            id: "7",
-            short_url: 'urrl.link/k9syeUs',
-            alias: 'k9syeUs',
-            long_url: 'https://google.com',
-            private: false
-        }
-    ])
+    const apiURI = process.env.NEXT_PUBLIC_API_URL
 
+    const [myurls, setMyurls] = useState<{id: string, short_url: string, long_url: string, private: boolean, alias:string}[]>([]);
+    const [pieChartData, setPieChartData] = useState<{x: string; y: number; text: string}[]>([]);
     const [urlFilter, setUrlFilter] = useState('');
-
+    const [requestError, setRequestError] = useState('');
     const [removeUrl, setRemoveUrl] = useState('');
 
-    const confirmDelete = (urlId: string) => {
-        setMyurls(prevState => prevState.filter(url => url.id != urlId))
+    useEffect(() => {
+      const fetchUrls = async () => {
+        const access = await validateAccess();
+        if (!access.success) {
+            setRequestError('An error occured. Please logout and login again!')
+            return
+        }
+        const response = await fetch(`${apiURI}/user/urls`, {
+            credentials: 'include',
+        })
+        .catch(() => {})
+        if (response && response.status == 200) {
+            const responseData = await response.json()
+
+            setMyurls(responseData.urls)
+            setPieChartData(responseData.top_stats)
+            return
+        }
+        setRequestError('An error occured. Please and login again!')
+      }
+
+      fetchUrls()
+    
+    }, [])
+    
+
+    const confirmDelete = async (urlId: string) => {
+        setRequestError('')
+        const response = await fetch(`${apiURI}/url/delete/${urlId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        })
+        .catch(() => {})
+        if (response && response.status == 200) {
+            setMyurls(prevState => prevState.filter(url => url.id != urlId))
+            return
+        }
+        setRequestError('An error occured. Please logout and login again!')
+
     }
 
     const filterUrls = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +64,7 @@ const urls = () => {
 
   return (
     <>
+        <Header/>
         <div className="m-2 mt-6 md:m-10 p-2 md:p-10 bg-white rounded-3xl">
             <div className="mb-6">
                 <div>
@@ -79,10 +77,16 @@ const urls = () => {
                 </div>
                 <input type="search" name="urlFilter" onChange={(e) => filterUrls(e)} value={urlFilter} className="block p-2 pl-10 w-full max-w-lg text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:border-blue-500" placeholder="Search urls... " required />
             </div>
-
+            {
+                requestError && (
+                <p className='p-2 bg-red-200 rounded-md mb-4 overflow-scroll mt-2 text-red-400'>
+                    {requestError}
+                </p>
+                )
+            }
             <div className="grid grid-cols-12 gap-6 mt-6">
             { 
-                myurls && myurls
+                myurls.length > 0 && myurls
                     .filter(url => url.long_url.toLowerCase().includes(urlFilter.toLowerCase()) || url.short_url.toLowerCase().includes(urlFilter.toLowerCase()))
                     .map(url => (
                         <div key={url.id} className="p-6 max-w-sm rounded-lg col-span-12 sm:col-span-6 lg:col-span-4 xl:col-span-3 border border-gray-200 shadow-md bg-gray-600">
@@ -119,33 +123,23 @@ const urls = () => {
             }
             </div>
 
-            <div className='col-span-12 text-center mt-6 mb-10 md:mt-10 text-gray-500 text-xl'>
-                <p className='font-mono font-semibold'>URL Hit Charts</p>
+            <div className='col-span-12 text-center mt-24 text-gray-500 text-xl'>
+                <p className='font-mono font-semibold'>URL Hit Chart(s)</p>
             </div>
             <div className='grid grid-cols-12 w-full'>
-                <div className="flex flex-col justify-center col-span-12 md:col-span-4 items-center">
-                    <div className='pl-4 pb-4 m-0'>
-                        <p className="text-sm xl:text-lg font-semibold font-mono">
-                        Url and shared document stats
+                <div className="flex flex-col pt-10 justify-center col-span-12 items-center">
+                    <div className='pl-4 m-0'>
+                        <p className="text-l xl:text-2xl font-semibold font-mono">
+                        {
+                            pieChartData && pieChartData.reduce((accumulator, value) => {
+                            return accumulator + value.y;
+                            }, 0)
+                        } total hits
                         </p>
-                        <p className="text-gray-400">Monthly breakdown</p>
+                        <p className="text-gray-400">Top {pieChartData ? pieChartData.length : 0} url alias visits</p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <p className="flex items-center gap-2 text-gray-600 hover:drop-shadow-xl">
-                            <span>
-                            <GoPrimitiveDot />
-                            </span>
-                            <span>Urls</span>
-                        </p>
-                        <p className="flex items-center gap-2 text-chart-green hover:drop-shadow-xl">
-                            <span>
-                            <GoPrimitiveDot />
-                            </span>
-                            <span>Documents</span>
-                        </p>
-                        </div>
                     <div>
-                        <StackedChart width="280px" height="320px" />
+                        <Pie size='400px' id="pie-chart" data={pieChartData} />
                     </div>
                 </div>
             </div>

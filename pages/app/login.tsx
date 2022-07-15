@@ -1,13 +1,21 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/router';
 
 import Header from '../../components/Header'
 
 import { FcLink } from "react-icons/fc";
+import { login } from '../../utils/login';
+import { useDataLayerValue } from '../../context/userContext';
 
 const Login = () => {
+  console.log('LOGIN HEre')
 
   const apiURI = process.env.NEXT_PUBLIC_API_URL
+  const router = useRouter();
+
+  const [{ user }, dispatch] = useDataLayerValue()
+
 
   const [loginInfo, setLoginInfo] = useState({
     email: '',
@@ -16,11 +24,16 @@ const Login = () => {
 
   const [requestError, setRequestError] = useState('')
 
+  useEffect(() => {
+    user && router.push('/app')
+  }, [user])
+  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRequestError('');
     setLoginInfo({
       ...loginInfo,
-      [e.target.name]: [e.target.value]
+      [e.target.name]: e.target.value
     })
   }
 
@@ -30,27 +43,21 @@ const Login = () => {
     
     let email = loginInfo.email;
     let password = loginInfo.password
-    if (!(email && password)) setRequestError('Email and Password fielda are required')
+    if (!(email && password)) setRequestError('Email and Password fields are required')
 
-    const response = await fetch(`${apiURI}/login`, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            email: email,
-            password: password
-            })
-    })
-    .catch(() => {
-        setRequestError('An Error occured!');
-        return
-    })
+    const response = await login(email, password);
 
     if (response && response.status == 200) {
-        window.location.href = `/app`;
-        return
+      const responseData = await response.json();
+      localStorage.setItem('urrlUser', JSON.stringify(responseData))
+      dispatch({
+        type: 'LOGIN',
+        payload: responseData
+      })
+
+      // router.push('/app')
+      // window.location.href = `/app`;
+      return
     }
     if (response && [400, 401].includes(response.status)) {
         const responseData = await response.json();

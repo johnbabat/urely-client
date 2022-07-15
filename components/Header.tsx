@@ -1,24 +1,29 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { FcLink } from "react-icons/fc";
 import { MdKeyboardArrowDown } from 'react-icons/md';
 import { TooltipComponent } from '@syncfusion/ej2-react-popups';
 import UserProfile from './UserProfile';
 import Link from 'next/link';
-
-interface user {
-  name: string
-}
+import { useDataLayerValue } from '../context/userContext';
 
 const Header = () => {
 
-  const me = {
-    name: 'John'
-  }
+  const apiURI = process.env.NEXT_PUBLIC_API_URL
 
-  const [user, setUser] = useState<user | null>(null);
-  const [isClicked, setIsClicked] = useState({
-    userProfile: true
-  })
+  const [{ user }, dispatch] = useDataLayerValue()
+  const [showProfile, setProfile] = useState(false)
+
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('urrlUser')
+    if (!savedUser) return
+    if (!user) {
+      dispatch({
+        type: 'LOGIN',
+        payload: JSON.parse(savedUser)
+      })
+    }
+  }, [])
 
 
   return (
@@ -29,27 +34,29 @@ const Header = () => {
         </div>
       </Link>
       <div className="flex">
+        
         {user ?
         <>
-          <TooltipComponent content="Profile" position="BottomCenter">
+          <TooltipComponent position="BottomCenter">
           <div
+            onClick={() => setProfile(true)}
             className="flex items-center gap-2 cursor-pointer p-1 hover:bg-light-gray rounded-lg"
           >
             <img
-              className="rounded-full w-8 h-8"
+              className="rounded-full w-8 h-8 border-2 border-slate-500"
               alt="user-profile"
-              src="/avatar.png"
+              src={user?.avatar ? `data:image/jpeg;base64,${user.avatar}` : '/default-avatar.jpg'}
             />
             <p>
               <span className="text-gray-400 text-14">Hi,</span>{' '}
               <span className="text-gray-400 font-bold ml-1 text-14">
-                {user?.name}
+                {user.first_name}
               </span>
             </p>
             <MdKeyboardArrowDown className="text-gray-400 text-14" />
           </div>
         </TooltipComponent>
-        {isClicked.userProfile && (<UserProfile/>)}
+        {showProfile && (<UserProfile setProfile={setProfile}/>)}
         </>
         :
           <div className='flex'>

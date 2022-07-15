@@ -3,99 +3,108 @@ import { convertToRaw, EditorState, convertFromHTML, ContentState } from 'draft-
 import dynamic from 'next/dynamic';
 import draftToHtml from 'draftjs-to-html';
 import { EditorProps } from 'react-draft-wysiwyg';
+import { useRouter } from 'next/router'
 
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import Header from '../../../components/Header';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import { FaRegCopy } from 'react-icons/fa';
 import { AiOutlineCheckCircle } from 'react-icons/ai';
+import { validateAccess } from '../../../utils/validateAccess';
 
 const Editor = dynamic<EditorProps>(
     () => import('react-draft-wysiwyg').then((mod) => mod.Editor),
     { ssr: false }
   );
 
-export async function getServerSideProps({ params }: { params: { id: string } }) {
-const apiURI = process.env.API_URL
-
-const response = await fetch(
-    `${apiURI}/document/id/${params.id}`, {
-    headers: {
-        'Content-Type': 'application/json'
-        }
-    }
-)
-.catch(() => {})
-
-return {
-    props: {
-        id: "3",
-        title: "my title",
-        htmlText: "<p>This is text</p>",
-        sharing: ["johnbabatola@gmail.com"],
-        isPrivate: true,
-        apiURI: apiURI
-    }
-}
-
-// if (response && response.status == 200) {
-//     const responseData = await response.json()
-//     return {
-//         props: {
-//             id: responseData.id,
-//             title: responseData.title,
-//             htmlText: responseData.html_text,
-//             sharing: responseData.users_sharing,
-//             private: responseData.private
-//             apiURI: apiURI
+// export async function getServerSideProps({ params }: { params: { id: string } }) {
+//     const apiURI = process.env.API_URL
+//         return {
+//             props: {
+//                 id: responseData.id,
+//                 title: responseData.title,
+//                 htmlText: responseData.html_text,
+//                 sharing: responseData.users_sharing,
+//                 private: responseData.private
+//             }
+//         }
+//     } else {
+//         return {
+//             props: {
+//                 id: '',
+//                 title: '',
+//                 htmlText: '',
+//                 sharing: [],
+//                 private: false
+//             }
 //         }
 //     }
-// } else {
-//     return {
-//         notFound: true
-//         }
-//     }
-}
+// }
 
-const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: string, title: string, htmlText: string, sharing: string[], isPrivate: boolean, apiURI: string}) => {
+const document = () => {
 
-    const [documentInfo, setDocumentInfo] = useState({
-        id: id,
-        title: title,
-        htmlText: htmlText
-    });
+    const apiURI = process.env.NEXT_PUBLIC_API_URL
+    const router = useRouter()
+    
+
+    const [docID, setDocId] = useState('');
+    const [documentTitle, setDocumentTitle] = useState('');
+
+    // const [data, setData] = useState(responseBData.map(d => ({x: new Date(d.x).getMonth(), y: d.y})));
 
     const [saveStatus, setSaveStatus] = useState('')
-
-    const [usersSharing, setUsersSharing] = useState(sharing);
-
+    const [usersSharing, setUsersSharing] = useState<string[]>([]);
     const [requestError, setRequestError] = useState('');
-
     const [sharingError, setSharingError] = useState('');
-
     const [newUser, setNewUser] = useState('');
-
     const [sharelink, setShareLink] = useState('');
-
     const [copied, setCopied] = useState('opacity-0');
-
-    const [docPrivate, setPrivate] = useState(isPrivate);
+    const [docPrivate, setPrivate] = useState(false);
+    const [description, setDescription] = useState(EditorState.createEmpty());
 
     useEffect(() => {
-      setShareLink(window.location.href);
-    }, [])
+        const { id } = router.query
+        if (!id) return
+        setDocId(id.toString())
+        
+        const fetchData = async () => {
+            const access = await validateAccess()
+            if (access.success) {
+                const response = await fetch(`${apiURI}/document/id/${id}`, {
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        }
+                    }
+                )
+                .catch(() => { })
+                if (response && response.status == 200) {
+                    const responseData = await response.json();
+    
+                    setUsersSharing(responseData.users_sharing);
+                    setDocumentTitle(responseData.title);
+                    setPrivate(responseData.private);
+                    setShareLink(window.location.href);
+                    // Convert from html can only be used after the page has rendered
+                    let contentBlock = convertFromHTML(responseData.html_text);
+                    let initialEditorState = EditorState.createWithContent(ContentState.createFromBlockArray(contentBlock.contentBlocks, contentBlock.entityMap));
+                    setDescription(initialEditorState);
+                    return
+                }
+            }
+            router.push('/app/login')
+        }
+
+        fetchData();
+    }, [router.query])
     
 
     const onChangeValue = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSaveStatus('')
-        setRequestError('')
-        setDocumentInfo({
-            ...documentInfo,
-            [e.target.name]: e.target.value
-            });
+        setSaveStatus('');
+        setRequestError('');
+        setDocumentTitle(e.target.value);
     }
 
-    const [description, setDescription] = useState(EditorState.createEmpty());
 
     const onEditorStateChange = (editorState: EditorState) => {
         setSaveStatus('')
@@ -107,6 +116,13 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
         event.preventDefault();
         event.persist();
 
+        const access = await validateAccess()
+        if (!access) {
+            setSaveStatus('Save failed!');
+            setRequestError('Please Login again!');
+            return
+        }
+
         let plainText = description.getCurrentContent().getPlainText();
         if (!plainText) {
             setRequestError('Document body required!');
@@ -114,17 +130,18 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
         }
         const response = await fetch(`${apiURI}/document/edit`, {
             method: 'PATCH',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id: id,
-                title: documentInfo.title,
+                id: docID,
+                title: documentTitle,
                 html_text: draftToHtml(convertToRaw(description.getCurrentContent())),
                 plain_text: plainText,
                 is_private: docPrivate
-                })
+            })
         })
         .catch(() => {
             setRequestError('An Error occured!');
@@ -135,7 +152,6 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
         if (response && response.status == 201) {
             setSaveStatus('Saved!');
             const responseData = await response.json();
-            window.location.href = `id/${responseData.id}`;
             return
         }
         if (response && response.status == 400) {
@@ -162,16 +178,23 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
     }
 
     const addUser = async () => {
+        setSharingError('')
         if (!newUser) return
 
+        const access = await validateAccess()
+        if (!access) {
+            setSharingError('Please Login again!');
+            return
+        }
         const response = await fetch(`${apiURI}/document/edit/sharing`, {
             method: 'PATCH',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id: id,
+                id: docID,
                 user_email: newUser,
                 add_user: true
                 })
@@ -182,7 +205,9 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
         })
 
         if (response && response.status == 201) {
-            setUsersSharing([...usersSharing, newUser])
+            if (!usersSharing.includes(newUser)) {
+                setUsersSharing([...usersSharing, newUser])
+            }
             return
         }
         if (response && response.status == 400) {
@@ -194,18 +219,24 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
     }
 
 
-    const removeUser = async (event: React.MouseEvent<SVGElement, MouseEvent>) => {
-        event.preventDefault();
+    const removeUser = async (userEmail: string) => {
+        setSharingError('')
+        const access = await validateAccess()
+        if (!access) {
+            setSharingError('Please Login again!');
+            return
+        }
 
         const response = await fetch(`${apiURI}/document/edit/sharing`, {
             method: 'PATCH',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id: id,
-                user_email: event.target.name,
+                id: docID,
+                user_email: userEmail,
                 add_user: false
                 })
         })
@@ -215,7 +246,7 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
         })
 
         if (response && response.status == 201) {
-            setUsersSharing(prevState => (prevState.filter(email => email != event.target.name)))
+            setUsersSharing(prevState => (prevState.filter(email => email !== userEmail)))
             return
         }
         if (response && response.status == 400) {
@@ -233,7 +264,7 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
         <div className="p-4 sm:p-10 md:p-14 max-w-6xl m-auto">
             <div className="border-2 border-gray-200 rounded-md p-4 sm:p-8">
                 <form onSubmit={saveDocument}>
-                    <h3 className="font-bold text-xl mb-1">Create Document</h3>
+                    <h3 className="font-bold text-xl mb-1">Edit Document</h3>
                     <label htmlFor="default-toggle" className="inline-flex relative items-center cursor-pointer">
                         <input type="checkbox" id="default-toggle" onChange={() => setPrivate(!docPrivate)} value="" className="sr-only peer" checked={docPrivate}/>
                         <div className="w-7 h-4 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-blue-300 after:content-[''] after:absolute after:top-[3px] after:left-[1px] after:bg-white after:border-black after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all border-black peer-checked:bg-blue-600"></div>
@@ -242,7 +273,7 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
                     <div className='mt-2'>
                         <div>
                             <label> Title <span className="text-red-500"> * </span> </label>
-                            <input className="block bg-gray-100 rounded-md w-full my-2 p-2" type="text" name="title" value={documentInfo.title} onChange={onChangeValue} placeholder="Title" required />
+                            <input className="block bg-gray-100 rounded-md w-full my-2 p-2" type="text" name="title" value={documentTitle} onChange={onChangeValue} placeholder="Title" required />
                         </div>
                         <div>
                             <div className='mb-2'><label>Body<span className="text-red-500"> * </span> </label></div>
@@ -292,7 +323,7 @@ const document = ({ id, title, htmlText, sharing, isPrivate, apiURI }: {id: stri
                             <div className='bg-gray-200 border-2 border-gray-300 max-h-28 p-2 max-w-xxs rounded-md overflow-scroll'>
                                 {
                                     usersSharing.map(userEmail => (
-                                        <p key={userEmail}><RiDeleteBin6Line name={userEmail} onClick={(e) => removeUser(e)} className='inline cursor-pointer' /> {userEmail}</p>
+                                        <p key={userEmail}><RiDeleteBin6Line onClick={() => removeUser(userEmail)} id="id" className='inline cursor-pointer' /> {userEmail}</p>
                                     ))
                                 }
                             </div>
