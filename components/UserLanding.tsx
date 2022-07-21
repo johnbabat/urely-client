@@ -81,7 +81,7 @@ const Landing = () => {
       setRequestError("No Url provided")
       return
     }
-    if (urlInfo.custom == 1 && !urlInfo.shortUrl) {
+    if (urlInfo.custom == 1 && !urlInfo.alias) {
       setRequestError("Provide alias for custom Url")
       return
     }
