@@ -27,7 +27,7 @@ const Header = () => {
 
 
   return (
-    <div className='flex justify-between align-middle bg-white px-10 py-3 sticky top-0 z-50 mt-1'>
+    <div className='flex justify-between align-middle bg-white px-3 md:px-10 py-3 sticky top-0 z-50 mt-1'>
       <Link href='/app'>
         <div className="items-center gap-1.5 flex text-xl font-extrabold cursor-pointer">
           <FcLink /><span>Urrl</span>

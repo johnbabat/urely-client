@@ -47,8 +47,7 @@ const Landing = () => {
         const documentPie = responseData.document_pie;
         const stacked = responseData.stacked;
         const line: {x: number[], y: number}[][] = responseData.line
-        console.log('url', urlPie)
-        console.log('doc', documentPie)
+        
         setUrlPieData(urlPie)
         setDocumentPieData(documentPie)
         setStackedChartData(stacked)
@@ -125,7 +124,7 @@ const Landing = () => {
 
   return (
     <div className='grid grid-cols-12 top-44 md:top-1/4 absolute w-full'>
-      <div className='ml-3 mt-10 md:ml-12 lg:ml-52 2xl:ml-112 text-5xl font-bold col-span-12 md:col-span-6'>
+      <div className='ml-3 mt-10 md:ml-12 lg:ml-52 2xl:ml-72 text-5xl font-bold col-span-12 md:col-span-6'>
         <div className='text-2xl'>Welcome to</div>
         <div className='font-mono'>Urrl Link</div>
         <div className='mb-6 text-2xl'>Give us a link to make magic</div>

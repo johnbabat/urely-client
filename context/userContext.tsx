@@ -21,13 +21,11 @@ const reducer = (state : typeState, action: ActionType) => {
 
     switch(action.type) {
         case 'LOGIN':
-            console.log( 'login payload', action.payload)
             return {
                 ...state,
                 user: action.payload
             };
         case 'LOGOUT':
-            console.log('logout no payload')
             return {
                 user: null
             }
