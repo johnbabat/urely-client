@@ -61,10 +61,10 @@ const Login = () => {
     }
     if (response && [400, 401].includes(response.status)) {
         const responseData = await response.json();
-        setRequestError(responseData.error);
+        setRequestError('Ann error occured!. Try again');
         return
     }
-    setRequestError('An error occured!');
+    setRequestError('An error occured!. Try again');
   }
 
   return (

@@ -37,7 +37,7 @@ const Register = () => {
     let lastName = registerInfo.lastName;
     let password = registerInfo.password;
     let confirmPassword = registerInfo.confirmPassword
-    console.log(password, confirmPassword)
+    
     if (password !== confirmPassword) {
       setRequestError('Passwords must match');
       return
