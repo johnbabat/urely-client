@@ -20,7 +20,8 @@ https://urrl.link
 The tech stack includes:
 
 Client side: React with Next.js and TypeScript
-Server Side: Python (Flask) and a Postgres DB (at - https://github.com/urrl-backend)
+
+Server Side: Python (Flask) and a Postgres DB (at - https://github.com/johnbabat/urrl-backend)
 
 
 ## Pre-requisites and Local development
