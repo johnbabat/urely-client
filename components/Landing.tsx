@@ -70,7 +70,7 @@ const Landing = () => {
   const submitUrl = async () => {
     setRequestError("")
     if (urlInfo.custom || urlInfo.reserve) {
-      setRequestError("Register to create Private URL");
+      setRequestError("Register to create custom/private alias");
       return
     }
     const response = await fetch(`${apiURI}/url/create`, {
